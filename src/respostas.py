@@ -102,7 +102,7 @@ ORDER BY Entregas DESC;
 # Colunas do resultado: NomeProduto, UnidadesVendidas, Faturamento
 Q8 = """SELECT Produtos.NomeProduto,
 SUM(ItensPedido.Quantidade) AS UnidadesVendidas,
-SUM(ItensPedido.Quantidade * ItensPedido.PrecoUnitario) AS TotalFaturado
+SUM(ItensPedido.Quantidade * ItensPedido.PrecoUnitario) AS  Faturamento
 FROM Pedidos
 INNER JOIN ItensPedido ON Pedidos.IdPedido = ItensPedido.IdPedido
 INNER JOIN Produtos ON ItensPedido.IdProduto = Produtos.IdProduto
@@ -116,13 +116,13 @@ ORDER BY UnidadesVendidas DESC;
 # Colunas do resultado: Categoria, Faturamento
 Q9 = """
 SELECT Produtos.Categoria,
-SUM(ItensPedido.Quantidade * ItensPedido.PrecoUnitario) AS TotalFaturado
+SUM(ItensPedido.Quantidade * ItensPedido.PrecoUnitario) AS  Faturamento
 FROM Pedidos
 INNER JOIN ItensPedido ON Pedidos.IdPedido = ItensPedido.IdPedido
 INNER JOIN Produtos ON ItensPedido.IdProduto = Produtos.IdProduto
 WHERE Pedidos.Status = 'Entregue'
 GROUP BY Produtos.Categoria
-ORDER BY TotalFaturado DESC;
+ORDER BY  Faturamento DESC;
 
 """
 
