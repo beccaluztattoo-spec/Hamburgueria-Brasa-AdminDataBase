@@ -130,7 +130,7 @@ ORDER BY  Faturamento DESC;
 # Colunas do resultado: Bairro, PedidosEntregues
 Q10 = """
 SELECT Clientes.Bairro,
-COUNT(*) AS EntregasPorBairro
+COUNT(*) AS  PedidosEntregues
 FROM Pedidos
 INNER JOIN Clientes ON Clientes.IdCliente = Pedidos.IdCliente
 WHERE Pedidos.Status = 'Entregue'
@@ -142,6 +142,15 @@ HAVING COUNT(*) >= 7;
 # Q11. Preços praticados do X-Bacon
 # Colunas do resultado: PrecoUnitario, Unidades, Faturamento
 Q11 = """
+SELECT ItensPedido.PrecoUnitario,
+SUM(ItensPedido.Quantidade) AS Unidades,
+SUM(ItensPedido.Quantidade * ItensPedido.PrecoUnitario) AS Faturamento
+FROM ItensPedido
+INNER JOIN Produtos ON ItensPedido.IdProduto = Produtos.IdProduto
+INNER JOIN Pedidos ON ItensPedido.IdPedido = Pedidos.IdPedido
+WHERE Produtos.NomeProduto = 'X-Bacon' AND Pedidos.Status = 'Entregue'
+GROUP BY ItensPedido.PrecoUnitario
+ORDER BY ItensPedido.PrecoUnitario ASC;
 
 """
 
@@ -152,36 +161,75 @@ Q11 = """
 # Q12. Top 3 clientes (fidelidade)
 # Colunas do resultado: Nome, Pedidos, TotalGasto
 Q12 = """
+SELECT Clientes.Nome,
+COUNT(DISTINCT Pedidos.IdPedido) AS Pedidos,
+SUM(ItensPedido.Quantidade * ItensPedido.PrecoUnitario) AS TotalGasto
+FROM Clientes
+INNER JOIN Pedidos ON Clientes.IdCliente = Pedidos.IdCliente
+INNER JOIN ItensPedido ON Pedidos.IdPedido = ItensPedido.IdPedido
+WHERE Pedidos.Status = 'Entregue'
+GROUP BY Clientes.Nome
+ORDER BY TotalGasto DESC;
 
 """
 
 # Q13. Faturamento mês a mês
 # Colunas do resultado: Mes, PedidosEntregues, Faturamento
 Q13 = """
-
+SELECT MONTH(Pedidos.DataPedido) AS Mes,
+COUNT(DISTINCT Pedidos.IdPedido) AS PedidosEntregues,
+SUM(ItensPedido.Quantidade * ItensPedido.PrecoUnitario) AS Faturamento
+FROM Pedidos
+INNER JOIN ItensPedido ON Pedidos.IdPedido = ItensPedido.IdPedido
+WHERE Pedidos.Status = 'Entregue'
+GROUP BY MONTH(Pedidos.DataPedido)
+ORDER BY Mes ASC;
 """
 
 # Q14. Entregador do trimestre
 # Colunas do resultado: Nome, Entregas, NotaMedia
 Q14 = """
-
+SELECT Entregadores.Nome,
+COUNT(Pedidos.IdPedido) AS Entregas,
+CAST(AVG(CAST(Pedidos.Avaliacao AS DECIMAL(10,2))) AS DECIMAL(10,2)) AS NotaMedia
+FROM Entregadores
+INNER JOIN Pedidos ON Entregadores.IdEntregador = Pedidos.IdEntregador
+WHERE Pedidos.Status = 'Entregue'
+GROUP BY Entregadores.Nome
+HAVING COUNT(Pedidos.IdPedido) >= 4 AND AVG(CAST(Pedidos.Avaliacao AS DECIMAL(10,2))) >= 4;
 """
 
 # Q15. Valor total dos pedidos de março
 # Colunas do resultado: IdPedido, Nome, ValorProdutos, TaxaEntrega, ValorTotal
 Q15 = """
+SELECT Pedidos.IdPedido, Clientes.Nome, Pedidos.TaxaEntrega, 
+SUM(ItensPedido.Quantidade * ItensPedido.PrecoUnitario) + Pedidos.TaxaEntrega AS ValorTotal,
+SUM(ItensPedido.Quantidade * ItensPedido.PrecoUnitario) AS ValorProdutos
+FROM Pedidos
+INNER JOIN Clientes ON Pedidos.IdCliente = Clientes.IdCliente
+INNER JOIN ItensPedido ON Pedidos.IdPedido = ItensPedido.IdPedido
+WHERE Pedidos.Status = 'Entregue' AND Pedidos.DataPedido >= '2026-03-01' AND Pedidos.DataPedido < '2026-04-01'
+GROUP BY Pedidos.IdPedido, Clientes.Nome,  Pedidos.TaxaEntrega
+ORDER BY ValorTotal DESC;
 
 """
 
 # Q16. Clientes sem nenhum pedido
 # Colunas do resultado: Nome, Bairro, DataCadastro
 Q16 = """
+SELECT Clientes.Nome, Clientes.Bairro, Clientes.DataCadastro
+FROM Clientes
+LEFT JOIN Pedidos ON Clientes.IdCliente = Pedidos.IdCliente
+WHERE Pedidos.IdPedido IS NULL;
 
 """
 
 # Q17. Produto que nunca foi vendido
 # Colunas do resultado: NomeProduto, Categoria, Preco
 Q17 = """
-
+SELECT Produtos.NomeProduto, Produtos.Categoria, Produtos.Preco
+FROM Produtos
+LEFT JOIN ItensPedido ON Produtos.IdProduto = ItensPedido.IdProduto
+WHERE ItensPedido.IdProduto IS NULL;
 """
 
